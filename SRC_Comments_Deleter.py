@@ -15,19 +15,16 @@ maxRunsToCheck = 50
 #How many seconds in between refreshing runs + comments. Don't crank this number too low, SRC crashes enough as is
 timewait = 60
 
+
 #Should this run as a dryrun? Basically, if set to "True", script will only print comment information of what it would delete instead of deleting them
 #This is so you can test the script before running it
 dryRun = True
 
-#NOTE THAT THIS SCRIPT REQUIRES FIREFOX TO BE LOGGED IN TO SRC TO ACTUALLY DELETE COMMENTS
+#NOTE THAT THIS REQUIRES FIREFOX TO BE LOGGED IN TO SRC TO ACTUALLY DELETE COMMENTS
 #That is because this uses cookies from Firefox in order to make the delete request
-#It also requires the python "browser_cookie3" module to be installed for this purpose
+
 
 #END OF USER-CONFIGURABLE PARTS
-
-#My own little version updater cuz I'm lazy
-script_version = "0.1"
-
 
 #Check python version
 import sys
@@ -65,7 +62,7 @@ import ctypes
 import urllib3
 
 #sets nice title
-ctypes.windll.kernel32.SetConsoleTitleW("SRC Comments Grabber/Deleter v1.0")
+ctypes.windll.kernel32.SetConsoleTitleW("SRC Comments Grabber/Deleter v1.0.1")
 
 #disable SSL warnings. SRC requires HTTPS but sometimes their certificate isn't "proper", this makes it connect
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -285,7 +282,7 @@ while True:
                     deletedResult = str(jsonOut['comment']['deleted'])
                     deletedResult = deletedResult.lower()
                     if (deletedResult == 'true'):
-                        print('Successfully Deleted commentID ' + i + ' from runID ' + commentRunDict[i])
+                        print('Successfully Deleted commentID ' + i + ' from run https://speedrun.com/run/' + commentRunDict[i])
                     else:
                         print('Failed to delete for some reason??? This message shouldn\'t even appear anywhere ever. Here\'s the JSON:')
                         print(str(jsonOut))
