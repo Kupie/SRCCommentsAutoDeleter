@@ -52,7 +52,7 @@ import json
 try:
     import browser_cookie3
 except ImportError:
-    print ('--Python module browser_cookie3 not installed, unable to delete comments without using a Speedrun.com cookie from Firefox. Continuing in Dryrun mode--')
+    print ('--Python module browser_cookie3 not installed, unable to delete comments without using a Speedrun.com cookie. Continuing in Dryrun mode--')
     dryRun = True
     pass
 
