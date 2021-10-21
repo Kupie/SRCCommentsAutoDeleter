@@ -20,8 +20,21 @@ timewait = 60
 #This is so you can test the script before running it
 dryRun = True
 
-#NOTE THAT THIS REQUIRES FIREFOX TO BE LOGGED IN TO SRC TO ACTUALLY DELETE COMMENTS
-#That is because this uses cookies from Firefox in order to make the delete request
+#NOTE THAT THIS REQUIRES A SUPPORTED BROWSER TO BE LOGGED IN TO SRC TO ACTUALLY DELETE COMMENTS
+#That is because this uses cookies from your web browser in order to make the delete request
+
+#Which web browser should the script grab cookies from?
+#Supported options are: Firefox, Chrome, Chromium, Opera, Edge, Brave
+#Examples:
+#Browser = 'Firefox'
+#Browser = 'Chrome'
+#Browser = 'Chromium'
+#Browser = 'Opera'
+#Browser = 'Edge'
+#Browser = 'Brave'
+
+Browser = 'Chrome'
+
 
 
 #END OF USER-CONFIGURABLE PARTS
@@ -39,19 +52,61 @@ import json
 try:
     import browser_cookie3
 except ImportError:
-    print ('Python module browser_cookie3 not installed, unable to delete comments without using a Speedrun.com cookie from Firefox. Continuing in Dryrun mode...')
+    print ('--Python module browser_cookie3 not installed, unable to delete comments without using a Speedrun.com cookie from Firefox. Continuing in Dryrun mode--')
     dryRun = True
     pass
 
-
-#Import cookies from Firefox for speedrun.com
-try:
-    cookiejar = browser_cookie3.firefox(domain_name='speedrun.com')
-except:
-    print('Failed to import cookies from Firefox. Is firefox installed and logged in to speedrun.com?')
-    print('unable to delete comments without using a Speedrun.com cookie from Firefox. Continuing in Dryrun mode...')
+def cookieFailure(x = False):
+    if not x:
+        print('--Failed to import cookies. Is ' + Browser + ' installed and logged in to speedrun.com?--')
+    print('--Continuing in Dryrun mode, as I can\'t delete anything without cookies--')
+    global dryRun
     dryRun = True
-    pass
+
+
+#Don't need cookies if we're just loading comments
+if not dryRun:
+    #Import cookies from Firefox for speedrun.com
+    if (Browser.lower() == 'firefox'):
+        try:
+            cookiejar = browser_cookie3.firefox(domain_name='speedrun.com')
+        except:
+            cookieFailure()
+            pass
+    elif (Browser.lower() == 'chrome'):
+        try:
+            cookiejar = browser_cookie3.chrome(domain_name='speedrun.com')
+        except:
+            cookieFailure()
+            pass
+    elif (Browser.lower() == 'chromium'):
+        try:
+            cookiejar = browser_cookie3.chromium(domain_name='speedrun.com')
+        except:
+            cookieFailure()
+            pass
+    elif (Browser.lower() == 'opera'):
+        try:
+            cookiejar = browser_cookie3.opera(domain_name='speedrun.com')
+        except:
+            cookieFailure()
+            pass
+    elif (Browser.lower() == 'edge'):
+        try:
+            cookiejar = browser_cookie3.edge(domain_name='speedrun.com')
+        except:
+            cookieFailure()
+            pass
+    elif (Browser.lower() == 'brave'):
+        try:
+            cookiejar = browser_cookie3.brave(domain_name='speedrun.com')
+        except:
+            cookieFailure()
+            pass
+    else:
+        print('--Unsupported browser specified, check the "Browser = " section of the script above--')
+        cookieFailure(True)
+        pass
 
   
 from datetime import datetime
@@ -62,7 +117,7 @@ import ctypes
 import urllib3
 
 #sets nice title
-ctypes.windll.kernel32.SetConsoleTitleW("SRC Comments Grabber/Deleter v1.0.1")
+ctypes.windll.kernel32.SetConsoleTitleW("SRC Comments Grabber/Deleter v1.0.2")
 
 #disable SSL warnings. SRC requires HTTPS but sometimes their certificate isn't "proper", this makes it connect
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -90,7 +145,7 @@ hasLevels = False
 #Time to get a list of every single leaderboard, category and level for the game. I only do this once instead of every time we check for comments
 try:
     #Get list of Categories
-    categories = requests.get('https://www.speedrun.com/api/v1/games/' + GamePage + '/categories', verify=False, cookies=cookiejar)
+    categories = requests.get('https://www.speedrun.com/api/v1/games/' + GamePage + '/categories', verify=False)
 except Exception as e:
     #If it fails, URL is invalid... or SRC is down. That's always an option
     print ("Exception: " + str(e))
@@ -107,14 +162,11 @@ for i in jsonOut['data']:
     if (i['type'] == 'per-level'):
         hasLevels = True
 
-#COMMENT OUT IN PRODUCTION, THIS IS TO TEST FASTER SINCE NEWTONE HAS SO MANY LEVELS-----------------------------------
-#hasLevels = False
-
 #Get List of Levels
 levelList = []
 if hasLevels:
     try:
-        levels = requests.get('https://www.speedrun.com/api/v1/games/' + GamePage + '/levels', verify=False, cookies=cookiejar)
+        levels = requests.get('https://www.speedrun.com/api/v1/games/' + GamePage + '/levels', verify=False)
     except Exception as e:
         #If it fails, URL is invalid... or SRC is down. That's always an option
         print ("Exception: " + str(e))
@@ -131,9 +183,11 @@ if hasLevels:
 
 #They have set us up the loop
 while True:
-    if (dryRun == False):
+    if not dryRun:
         print('WARNING, SCRIPT CONFIGURED TO DELETE COMMENTS. CLOSE WINDOW OR PRESS CTRL+C NOW TO CANCEL.')
     print('SRC page to check: https://speedrun.com/' + GamePage)
+    if not dryRun:
+        print('Using browser cookies from: ' + Browser)
 
     print('User Whitelist:')
     for i in range(len(userWhiteList)):
@@ -143,16 +197,16 @@ while True:
     if hasLevels:
         print('Number of levels: ' + str(len(levelList)))
 
-    if (dryRun == False):
+    if not dryRun:
         #Get csrftoken from speedrun.com main page. Without beautifulsoup this is 'fun'TM
         try:
             mainPage = requests.get('https://www.speedrun.com/', verify=False, cookies=cookiejar)
             split1 = str(mainPage.content).split('<meta name="csrftoken" content="')
             split2 = split1[1].split('">')
-            #print('csrftoken: ' + split2[0])
+            csrftoken = split2[0]
+            #print('csrftoken: ' + csrftoken)
             #Just in-case people don't want this showing on their screen...
             print('csrftoken: ********************************')
-            csrftoken = split2[0]
         except Exception as e:
             print ("Exception: " + str(e))
             print('\nCould not connect to SRC and get csrftoken. Are you sure you\'re logged in to firefox on SRC? This script uses Firefox\'s cookies')
@@ -234,7 +288,7 @@ while True:
             sleepy()
             percCompleteNew = round(donionRings / len(runList) * 100)
             if (percCompleteNew != percComplete):
-                print('Complete: %' + str(percComplete), end='\r', flush=True)
+                print('Complete: %' + str(percComplete + 1), end='\r', flush=True)
                 percComplete = percCompleteNew
                 if (percComplete == 100):
                     print()
